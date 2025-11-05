@@ -5,8 +5,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      MONGO_URI: mongodb://mongo:27017/mingle
-      JWT_SECRET: supersecretjwtkeyicanchange
+      MONGO_URI: mongodb+srv://hfadhel140802:qkOIQ8JwMsWYH5Sq@cluster0.ebnt6az.mongodb.net/mingle?retryWrites=true&w=majority&appName=Cluster0
+      JWT_SECRET: JWT_SECRET=723f0479e485e3dedbc05e7c4f4a462ddaa4f0ac09c31767fa13a7fe821e5137
     depends_on:
       - mongo
   mongo:
