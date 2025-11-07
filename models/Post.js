@@ -49,10 +49,9 @@ const postSchema = new mongoose.Schema({
 // Add indexes for performance (Phase G: proper database models)
 postSchema.index({ 'topics': 1 });
 postSchema.index({ 'status': 1 });
-postSchema.index({ 'expiresAt': 1 });
 postSchema.index({ 'createdAt': -1 });
 
-// TTL index for auto-expiry (optional for Phase H: expiration handling)
+// TTL index for auto-expiry (optional for Phase H: expiration handling) - This handles expiration indexing
 postSchema.index({ 'expiresAt': 1 }, { expireAfterSeconds: 0 });
 
 postSchema.methods.isExpired = function() {

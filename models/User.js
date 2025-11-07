@@ -7,8 +7,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true, minlength: 6 }
 }, { timestamps: true });
 
-// Add index on email for uniqueness/performance
-userSchema.index({ 'email': 1 });
+// Removed: Duplicate index on email (unique already creates it)
 
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
