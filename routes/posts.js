@@ -39,7 +39,7 @@ router.post('/', auth, postValidation, async (req, res) => {
     await post.save();
 
     res.status(201).json({
-      message: 'Post created! (Action 2)',
+      message: 'Post created!',
       post: {
         id: post._id,
         title: post.title,
@@ -182,7 +182,7 @@ router.post('/:id/like', auth, async (req, res) => {
     await post.save();
 
     const timeLeft = Math.max(0, Math.floor((post.expiresAt - Date.now()) / (1000 * 60))); // Minutes left for expiry (per Data)
-    res.json({ message: 'Post liked (Action 4)', likes: post.likes.length, timeLeft });
+    res.json({ message: 'Post liked', likes: post.likes.length, timeLeft });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -229,7 +229,7 @@ router.post('/:id/dislike', auth, async (req, res) => {
     await post.save();
 
     const timeLeft = Math.max(0, Math.floor((post.expiresAt - Date.now()) / (1000 * 60)));
-    res.json({ message: 'Post disliked (Action 4)', dislikes: post.dislikes.length, timeLeft });
+    res.json({ message: 'Post disliked', dislikes: post.dislikes.length, timeLeft });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -272,7 +272,7 @@ router.post('/:id/comments', auth, async (req, res) => {
 
     const timeLeft = Math.max(0, Math.floor((post.expiresAt - Date.now()) / (1000 * 60)));
     res.status(201).json({
-      message: 'Comment added (Action 4)',
+      message: 'Comment added',
       comments: populatedPost.comments.map(c => ({
         user: c.user.name, // Name per Data
         text: c.text,
