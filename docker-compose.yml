@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  # Application container with OAuth v2
+  # Application container
   mingle:
     build: .
     ports:
       - "3000:3000"
     environment:
       # Database
-      MONGO_URI: mongodb+srv://hfadhel140802:qkOIQ8JwMsWYH5Sq@cluster0.ebnt6az.mongodb.net/mingle?retryWrites=true&w=majority&appName=Cluster0
+      MONGO_URI: ${MONGO_URI}
       
       # JWT Secret
-      JWT_SECRET: 723f0479e485e3dedbc05e7c4f4a462ddaa4f0ac09c31767fa13a7fe821e5137
+      JWT_SECRET: ${JWT_SECRET}
       
       # OAuth v2 Google Credentials
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_CALLBACK_URL: http://localhost:3000/api/auth/google/callback
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
       
       # Session Secret
       SESSION_SECRET: ${SESSION_SECRET}
