@@ -59,46 +59,50 @@ router.post('/', auth, postValidation, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const { topic, status } = req.query;
-
+    const now = new Date();
     let filter = {};
 
     if (topic) {
-      filter.topics = { $in: [topic] }; // Fix: Match if topic in array (allows multiple topics per post)
+      filter.topics = { $in: [topic] };
     }
 
+    // Logic: If asking for 'expired', look for Expired status OR past date.
+    // If asking for 'live' (default), look for Live status AND future date.
     if (status === 'expired') {
-      filter.status = 'Expired';
+       filter.$or = [
+         { status: 'Expired' },
+         { expiresAt: { $lte: now } }
+       ];
     } else {
-      filter.status = { $ne: 'Expired' }; // Default to non-expired
+      // Default to Live: Must be marked Live AND expire in the future
+      filter.status = 'Live';
+      filter.expiresAt = { $gt: now };
     }
 
-    let posts = await Post.find(filter)
+    const posts = await Post.find(filter)
       .populate('owner', 'name email')
       .sort({ createdAt: -1 });
 
-    posts = posts.map(post => {
-      if (post.isExpired() && post.status === 'Live') {
-        post.status = 'Expired';
-        post.save();
-      }
-      return post;
-    });
-
     res.json({
       count: posts.length,
-      posts: posts.map(p => ({
-        id: p._id,
-        title: p.title,
-        body: p.body,
-        topics: p.topics,
-        owner: p.owner.name, // As per Data: owner name
-        status: p.status,
-        expiresAt: p.expiresAt,
-        likes: p.likes.length,
-        dislikes: p.dislikes.length,
-        comments: p.comments.length,
-        createdAt: p.createdAt
-      }))
+      posts: posts.map(p => {
+        // Calculate effective status for display without writing to DB
+        const isActuallyExpired = p.status === 'Expired' || p.expiresAt <= now;
+        
+        return {
+          id: p._id,
+          title: p.title,
+          body: p.body,
+          topics: p.topics,
+          owner: p.owner.name,
+          status: isActuallyExpired ? 'Expired' : 'Live', 
+          expiresAt: p.expiresAt,
+          likes: p.likes.length,
+          dislikes: p.dislikes.length,
+          comments: p.comments.length,
+          createdAt: p.createdAt
+        };
+      })
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -115,10 +119,9 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    if (post.isExpired() && post.status === 'Live') {
-      post.status = 'Expired';
-      await post.save();
-    }
+    // Calculate status for response without modifying DB
+    const now = new Date();
+    const isActuallyExpired = post.status === 'Expired' || post.expiresAt <= now;
 
     res.json({
       id: post._id,
@@ -126,12 +129,12 @@ router.get('/:id', auth, async (req, res) => {
       body: post.body,
       topics: post.topics,
       owner: post.owner.name,
-      status: post.status,
+      status: isActuallyExpired ? 'Expired' : 'Live',
       expiresAt: post.expiresAt,
       likes: post.likes.length,
       dislikes: post.dislikes.length,
       comments: post.comments.map(c => ({
-        user: c.user.name, // Data: user info (name)
+        user: c.user.name,
         text: c.text,
         timestamp: c.timestamp
       })),
@@ -295,41 +298,67 @@ router.get('/browse/active', auth, async (req, res) => {
       return res.status(400).json({ error: 'Topic required for active browse (?topic=Tech)' });
     }
 
-    let filter = { status: 'Live', topics: { $in: [topic] } };
+    const now = new Date();
 
-    let posts = await Post.find(filter)
-      .populate('owner', 'name email');
+    // Aggregation Pipeline: Efficiently finds top post at DB level
+    const pipeline = [
+      // 1. Filter: Must match topic, be Live, AND not expired
+      { 
+        $match: { 
+          topics: topic, 
+          status: 'Live',
+          expiresAt: { $gt: now } 
+        } 
+      },
+      // 2. Add computed field for activity score (likes + dislikes count)
+      { 
+        $addFields: {
+          activityScore: { $add: [{ $size: "$likes" }, { $size: "$dislikes" }] }
+        }
+      },
+      // 3. Sort by activity score descending
+      { $sort: { activityScore: -1 } },
+      // 4. Limit to 1 result (Efficiency)
+      { $limit: 1 },
+      // 5. Lookup owner details (Join with Users table)
+      {
+        $lookup: {
+          from: 'users',       // MongoDB collection name is lowercase plural
+          localField: 'owner',
+          foreignField: '_id',
+          as: 'ownerDetails'
+        }
+      },
+      // 6. Unwind owner array (lookup returns an array)
+      { $unwind: '$ownerDetails' }
+    ];
 
-    posts = posts.map(post => {
-      if (post.isExpired()) {
-        post.status = 'Expired';
-        post.save();
-        return null;
-      }
-      return { ...post._doc, activityScore: post.likes.length + post.dislikes.length };
-    }).filter(p => p !== null);
+    const posts = await Post.aggregate(pipeline);
+    const topPost = posts[0];
 
-    posts.sort((a, b) => b.activityScore - a.activityScore);
-
-    const topPost = posts[0]; // Most active (highest likes+dislikes)
+    // Handle case where no posts exist
+    if (!topPost) {
+        return res.status(404).json({ message: 'No active posts found for this topic' });
+    }
 
     res.json({
       topic,
-      topPost: topPost ? {
+      topPost: {
         id: topPost._id,
         title: topPost.title,
         body: topPost.body,
         topics: topPost.topics,
-        owner: topPost.owner.name,
+        owner: topPost.ownerDetails.name, // From lookup
         status: topPost.status,
         expiresAt: topPost.expiresAt,
         likes: topPost.likes.length,
         dislikes: topPost.dislikes.length,
         activityScore: topPost.activityScore,
         createdAt: topPost.createdAt
-      } : null
+      }
     });
   } catch (err) {
+    console.error(err); // Helpful for debugging aggregation errors
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -337,28 +366,34 @@ router.get('/browse/active', auth, async (req, res) => {
 // @GET /api/posts/browse/expired - Action 6: Browse expired posts history
 router.get('/browse/expired', auth, async (req, res) => {
   try {
-    let posts = await Post.find()
-      .populate('owner', 'name email');
+    const { topic } = req.query;
+    const now = new Date();
+    
+    // Filter: Explicitly 'Expired' status OR expiration date has passed
+    let filter = {
+      $or: [
+        { status: 'Expired' },
+        { expiresAt: { $lte: now } }
+      ]
+    };
 
-    posts = posts.map(post => {
-      if (post.isExpired() && post.status === 'Live') {
-        post.status = 'Expired';
-        post.save();
-      }
-      return post;
-    });
+    if (topic) {
+      filter.topics = { $in: [topic] };
+    }
 
-    const expiredPosts = posts.filter(p => p.status === 'Expired');
+    const posts = await Post.find(filter)
+      .populate('owner', 'name email')
+      .sort({ createdAt: -1 });
 
     res.json({
-      count: expiredPosts.length,
-      posts: expiredPosts.map(p => ({
+      count: posts.length,
+      posts: posts.map(p => ({
         id: p._id,
         title: p.title,
         body: p.body,
         topics: p.topics,
-        owner: p.owner,
-        status: p.status,
+        owner: p.owner.name,
+        status: 'Expired',
         expiresAt: p.expiresAt,
         likes: p.likes.length,
         dislikes: p.dislikes.length,
