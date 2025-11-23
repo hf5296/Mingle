@@ -59,34 +59,53 @@ router.post('/', auth, postValidation, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const { topic, status } = req.query;
+    
+    // Pagination Defaults
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const now = new Date();
     let filter = {};
 
+    // 1. Build Filter
     if (topic) {
       filter.topics = { $in: [topic] };
     }
 
-    // Logic: If asking for 'expired', look for Expired status OR past date.
-    // If asking for 'live' (default), look for Live status AND future date.
     if (status === 'expired') {
+       // Explicitly expired OR time has passed
        filter.$or = [
          { status: 'Expired' },
          { expiresAt: { $lte: now } }
        ];
     } else {
-      // Default to Live: Must be marked Live AND expire in the future
+      // Default to Live: Must be Live AND in the future
       filter.status = 'Live';
       filter.expiresAt = { $gt: now };
     }
 
+    // 2. Get Total Count (Efficiently)
+    // We need this so the frontend knows how many pages exist
+    const totalPosts = await Post.countDocuments(filter);
+
+    // 3. Fetch Paginated Data
     const posts = await Post.find(filter)
       .populate('owner', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)   // Skip X previous posts
+      .limit(limit); // Only take Y posts
 
+    // 4. Return Data + Metadata
     res.json({
-      count: posts.length,
+      meta: {
+        totalPosts,
+        totalPages: Math.ceil(totalPosts / limit),
+        currentPage: page,
+        postsPerPage: limit
+      },
       posts: posts.map(p => {
-        // Calculate effective status for display without writing to DB
+        // Calculate status strictly for display (don't save to DB)
         const isActuallyExpired = p.status === 'Expired' || p.expiresAt <= now;
         
         return {
@@ -105,6 +124,7 @@ router.get('/', auth, async (req, res) => {
       })
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -367,6 +387,12 @@ router.get('/browse/active', auth, async (req, res) => {
 router.get('/browse/expired', auth, async (req, res) => {
   try {
     const { topic } = req.query;
+    
+    // Pagination Defaults
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const now = new Date();
     
     // Filter: Explicitly 'Expired' status OR expiration date has passed
@@ -381,12 +407,23 @@ router.get('/browse/expired', auth, async (req, res) => {
       filter.topics = { $in: [topic] };
     }
 
+    // 1. Get Count
+    const totalPosts = await Post.countDocuments(filter);
+
+    // 2. Fetch Data
     const posts = await Post.find(filter)
       .populate('owner', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.json({
-      count: posts.length,
+      meta: {
+        totalPosts,
+        totalPages: Math.ceil(totalPosts / limit),
+        currentPage: page,
+        postsPerPage: limit
+      },
       posts: posts.map(p => ({
         id: p._id,
         title: p.title,
