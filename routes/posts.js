@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Post routes for the Mingle API.
+ * Handles CRUD operations for posts, including likes, dislikes, comments, and browsing.
+ */
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/Post');

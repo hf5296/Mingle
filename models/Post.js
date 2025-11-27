@@ -46,14 +46,35 @@ const postSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-// Add indexes for performance (Phase G: proper database models)
+// Database indexes for performance optimization (Phase G: proper database models)
+/**
+ * Index on topics for efficient filtering by topic
+ */
 postSchema.index({ 'topics': 1 });
+
+/**
+ * Index on status for live/expired queries
+ */
 postSchema.index({ 'status': 1 });
+
+/**
+ * Index on createdAt for sorting by recency
+ */
 postSchema.index({ 'createdAt': -1 });
 
-// TTL index for auto-expiry (optional for Phase H: expiration handling) - This handles expiration indexing
+/**
+ * TTL index for auto-expiry (optional for Phase H: expiration handling)
+ * Automatically removes documents when expiresAt is reached (set to 0 to disable auto-removal)
+ */
 postSchema.index({ 'expiresAt': 1 }, { expireAfterSeconds: 0 });
 
+/**
+ * Check if post has expired
+ * @description Compares current time with post's expiration timestamp
+ * @method isExpired
+ * @memberof Post.prototype
+ * @returns {boolean} True if post has passed its expiration time
+ */
 postSchema.methods.isExpired = function() {
   return Date.now() > this.expiresAt;
 };

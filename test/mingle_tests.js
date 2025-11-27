@@ -1,4 +1,33 @@
-// Test script for OAuth v2 implementation (Phase D: Testing - TC1-TC3)
+/**
+ * @fileoverview Automated test suite for Mingle OAuth2 API implementation.
+ * Implements Phase D test cases TC1-TC3 focusing on user registration,
+ * OAuth2 bearer token authentication, and access control validation.
+ *
+ * @description This test suite validates core authentication features:
+ * - TC1: User registration for Olga, Nick, Mary, and Nestor
+ * - TC2: OAuth2 Bearer token verification and user profile access
+ * - TC3: Unauthorized API access rejection
+ *
+ * Test data is exported to Postman-compatible JSON for continued manual testing
+ * of remaining test cases (TC4-TC20) covering posts, likes, comments, and browsing.
+ *
+ * @requires axios - HTTP client for API requests (2.6.0+)
+ * @requires fs - Node.js file system module for test data export
+ *
+ * @example
+ * ```bash
+ * # Run tests from project root
+ * node test/mingle_tests.js
+ * ```
+ *
+ * @example
+ * ```js
+ * // Programmatic execution
+ * const { runTests } = require('./test/mingle_tests.js');
+ * runTests().then(() => console.log('Tests completed'));
+ * ```
+ */
+
 const axios = require('axios');
 const fs = require('fs');
 

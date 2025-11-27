@@ -1,3 +1,17 @@
+/**
+ * @fileoverview User model schema for the Mingle API.
+ * Defines authentication and profile data for both local and OAuth users.
+ *
+ * @description This model supports:
+ * - Local authentication with bcrypt hashing
+ * - OAuth 2.0 integration (Google, future GitHub)
+ * - Email verification and profile pictures
+ * - Secure token storage for OAuth providers
+ *
+ * @see {@link https://mongoosejs.com/|Mongoose Documentation}
+ * @see {@link https://oauth.net/2/|OAuth 2.0 Specification}
+ */
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -36,7 +50,16 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-// Compare password only for local users
+/**
+ * Compare password for local users only
+ * @description Compares a candidate password with the stored hash
+ * @async
+ * @method comparePassword
+ * @memberof User.prototype
+ * @param {string} candidatePassword - Password to compare
+ * @returns {Promise<boolean>} True if password matches
+ * @throws {Error} If user is OAuth-only or comparison fails
+ */
 userSchema.methods.comparePassword = async function(candidatePassword) {
   if (this.oauthProvider !== 'local') {
     throw new Error('OAuth users cannot use password authentication');

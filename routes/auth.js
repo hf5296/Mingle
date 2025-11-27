@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Authentication routes for the Mingle API.
+ * Handles local registration/login and OAuth2 with Google.
+ */
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
@@ -7,7 +11,11 @@ const passport = require('../config/passport');
 
 const router = express.Router();
 
-// Input validation for local registration
+/**
+ * Input validation middleware for local user registration
+ * @description Validates user registration data for name, email, and password
+ * @returns {Array} Express-validator middleware chain
+ */
 const registerValidation = [
   body('name').isLength({ min: 2, max: 50 }).withMessage('Name 2-50 chars'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email'),
@@ -67,7 +75,11 @@ router.post('/register', registerValidation, async (req, res) => {
   }
 });
 
-// Validation for local login
+/**
+ * Input validation middleware for local user login
+ * @description Validates user login data for email and password
+ * @returns {Array} Express-validator middleware chain
+ */
 const loginValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email'),
   body('password').exists().withMessage('Password required'),

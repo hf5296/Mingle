@@ -1,3 +1,22 @@
+/**
+ * @fileoverview Main application file for the Mingle API.
+ * Sets up Express server with OAuth2 authentication, MongoDB connection, and routes.
+ *
+ * @description This file configures the core Mingle application, including:
+ * - Environment variables loading
+ * - Express server setup
+ * - Middleware configuration (body parsing, sessions)
+ * - Passport initialization for OAuth2
+ * - MongoDB connection
+ * - Route definitions
+ * - Error handling
+ * - Server startup
+ *
+ * @see {@link https://expressjs.com/|Express.js Documentation}
+ * @see {@link https://mongoosejs.com/|Mongoose ODM}
+ * @see {@link https://oauth.net/2/|OAuth 2.0 Specification}
+ */
+
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -5,6 +24,11 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const passport = require('./config/passport');
 
+/**
+ * Express application instance
+ * @type {import('express').Application}
+ * @description Main Express app configured with middleware for the Mingle API
+ */
 const app = express();
 
 // Body parser middleware
@@ -52,7 +76,11 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found 😢' });
 });
 
-// Start server
+/**
+ * Server startup configuration
+ * @description Starts the Express server on configured port
+ * @constant {number} PORT - Server port from environment or default 3000
+ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Mingle Server running on http://localhost:${PORT}`);
