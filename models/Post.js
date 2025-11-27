@@ -1,5 +1,19 @@
 const mongoose = require('mongoose');
 
+/**
+ * @typedef {Object} PostDocument
+ * @property {string} title - Post title
+ * @property {string} body - Post content
+ * @property {string[]} topics - Array of topics
+ * @property {Date} expiresAt - Expiration timestamp
+ * @property {Object} owner - Reference to User ID
+ * @property {string} status - 'Live' or 'Expired'
+ * @property {Array} likes - Array of user likes
+ * @property {Array} dislikes - Array of user dislikes
+ * @property {Array} comments - Array of comments
+ * @property {Function} isExpired - Method to check expiration
+ */
+
 const postSchema = new mongoose.Schema({
   title: { 
     type: String, 

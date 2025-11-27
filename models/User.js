@@ -15,6 +15,16 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+/**
+ * @typedef {Object} UserDocument
+ * @property {string} _id - The user's MongoDB ID
+ * @property {string} name - Full name
+ * @property {string} email - Email address
+ * @property {string} oauthProvider - Authentication provider ('local', 'google', etc.)
+ * @property {boolean} isEmailVerified - Verification status
+ * @property {function} comparePassword - Method to verify password hash
+ */
+
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, minlength: 2, maxlength: 50 },
   email: { type: String, required: true, unique: true, lowercase: true },

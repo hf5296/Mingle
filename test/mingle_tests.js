@@ -33,6 +33,18 @@ const fs = require('fs');
 
 const BASE_URL = 'http://localhost:3000/api';
 
+/**
+ * Main test execution function for TC1-TC3 authentication scenarios
+ * @async
+ * @function runTests
+ * @description Orchestrates the automated testing sequence:
+ * 1. User registration for Olga, Nick, Mary, and Nestor
+ * 2. OAuth2 Bearer token verification via /auth/me
+ * 3. Unauthorized access rejection testing
+ * 4. Export test data for Postman continuation
+ * @returns {Promise<void>} Completes when all tests finish, regardless of success/failure
+ * @throws {Error} Handles and reports test failures gracefully
+ */
 async function runTests() {
   console.log('🧪 Starting Mingle OAuth v2 API Tests (TC1-TC3)...\n');
 
@@ -78,6 +90,15 @@ async function runTests() {
     }
 
     // ========== EXPORT DATA FOR POSTMAN ==========
+    
+    /**
+     * @typedef {Object} PostmanExport
+     * @property {Object.<string, string>} tokens - Map of User Name -> Bearer Token
+     * @property {Object.<string, string>} userIds - Map of User Name -> MongoDB ID
+     * @property {Object} config - Environment configuration
+     */
+    
+    /** @type {PostmanExport} */
     const postmanTestData = {
       tokens,
       userIds,

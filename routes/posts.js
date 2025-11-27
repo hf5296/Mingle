@@ -1,21 +1,56 @@
 /**
  * @fileoverview Post routes for the Mingle API.
  * Handles CRUD operations for posts, including likes, dislikes, comments, and browsing.
+ * Implements Phase C Actions 1-6 with RESTful API endpoints.
+ *
+ * @description Provides complete post management through:
+ * - POST creation with expiration and topic classification
+ * - Multi-topic browsing with live/expired status filtering
+ * - Interactive features: like, dislike, commenting
+ * - Analytics: most active posts per topic, expired post history
+ * - Real-time expiration tracking and time-left calculations
+ *
+ * @requires express - Web framework for HTTP request handling
+ * @requires express-validator - Input validation middleware
+ * @requires ../models/Post - Mongoose Post schema
+ * @requires ../middleware/auth - JWT authentication middleware
  */
+
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/Post');
 const auth = require('../middleware/auth');
 
+/**
+ * Express Router instance for post-related endpoints
+ * @type {import('express').Router}
+ */
 const router = express.Router();
 
-// Validation for post creation
+/**
+ * Input validation middleware for post creation
+ * @description Validates post data including title, body, topics, and expiration time
+ * @returns {Array} Express-validator middleware chain including error handler
+ *
+ * @validation_rules
+ * - title: 1-100 characters required
+ * - body: 1-1000 characters required
+ * - topics: Optional array, each value must be from ['Politics', 'Health', 'Sport', 'Tech']
+ * - expirationMinutes: Optional integer 1-1440 (default: 1440 = 24 hours)
+ */
 const postValidation = [
   body('title').isLength({ min: 1, max: 100 }).withMessage('Title 1-100 chars'),
   body('body').isLength({ min: 1, max: 1000 }).withMessage('Body 1-1000 chars'),
   body('topics').isArray().optional({ nullable: true }).withMessage('Topics as array'),
   body('topics.*').isIn(['Politics', 'Health', 'Sport', 'Tech']).withMessage('Valid topic'),
   body('expirationMinutes').isInt({ min: 1, max: 1440 }).optional().withMessage('Expiration 1-1440 min'),
+  /**
+   * Express-validator error handler
+   * @param {import('express').Request} req - Express request object
+   * @param {import('express').Response} res - Express response object
+   * @param {import('express').NextFunction} next - Express next middleware function
+   * @returns {void} Returns JSON error array or continues to next middleware
+   */
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -25,13 +60,42 @@ const postValidation = [
   },
 ];
 
-// @POST /api/posts - Action 2: Only authorized users post (Phase C, Action 1 & 2)
+/**
+ * POST /api/posts - Create new post (Action 2: Only authorized users post)
+ * @description Allows authenticated users to create posts with expiration times and topics
+ * @action Implements Phase C Action 1 & 2: User posts and post content requirements
+ * @auth Required: Bearer token in Authorization header
+ * @body_param {string} title - Post title (1-100 characters)
+ * @body_param {string} body - Post content (1-1000 characters)
+ * @body_param {string[]} [topics] - Array of topic categories ['Politics', 'Health', 'Sport', 'Tech']
+ * @body_param {number} [expirationMinutes] - Post lifetime in minutes (1-1440, default: 1440)
+ * @response_201 {Object} Successfully created post with ID and metadata
+ * @response_400 {Object} Validation error with specific field errors
+ * @response_401 {Object} Authentication required
+ * @response_500 {Object} Server error during post creation
+ *
+ * @example POST /api/posts
+ * {
+ *   "title": "Mingle is awesome!",
+ *   "body": "This platform enables great discussions...",
+ *   "topics": ["Tech"],
+ *   "expirationMinutes": 30
+ * }
+ *
+ * @returns {Promise<void>} JSON response with created post data
+ */
 router.post('/', auth, postValidation, async (req, res) => {
   try {
+    /**
+     * Extract validated post parameters from request body
+     * @type {Object} Request body containing post details
+     */
     const { title, body, topics, expirationMinutes } = req.body;
 
+    /** Calculate post expiration timestamp (default 24 hours) */
     const expiresAt = new Date(Date.now() + (expirationMinutes || 1440) * 60 * 1000);
 
+    /** Create new post document with validated data */
     const post = new Post({
       title: title.trim(),
       body: body.trim(),
@@ -59,7 +123,30 @@ router.post('/', auth, postValidation, async (req, res) => {
   }
 });
 
-// @GET /api/posts?topic=Tech&status=live - Action 3: Browse messages per topic (default live)
+/**
+ * GET /api/posts - Browse posts by topic and status (Action 3: Browse messages per topic)
+ * @description Retrieves paginated list of posts with optional topic filtering and live/expired status
+ * @action Implements Phase C Action 3: Authorized users browse messages per topic
+ * @auth Required: Bearer token in Authorization header
+ * @query_param {string} [topic] - Filter by topic ('Politics', 'Health', 'Sport', 'Tech')
+ * @query_param {string} [status] - Filter by status ('live' or 'expired', default: 'live')
+ * @query_param {number} [page] - Page number for pagination (default: 1)
+ * @query_param {number} [limit] - Posts per page (default: 10)
+ * @response_200 {Object} Paginated posts with metadata
+ * @response_401 {Object} Authentication required
+ *
+ * @example GET /api/posts?topic=Tech&status=live&page=1&limit=10
+ * Response:
+ * {
+ *   "meta": {
+ *     "totalPosts": 25,
+ *     "totalPages": 3,
+ *     "currentPage": 1,
+ *     "postsPerPage": 10
+ *   },
+ *   "posts": [...]
+ * }
+ */
 router.get('/', auth, async (req, res) => {
   try {
     const { topic, status } = req.query;
@@ -133,6 +220,19 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/posts/:id - Retrieve individual post with full details
+ * @description Fetches complete post data including owner info, comments, and interaction counts
+ * @auth Required: Bearer token in Authorization header
+ * @param {string} :id - MongoDB ObjectId of the post to retrieve
+ * @response_200 {Object} Complete post data with populated user details
+ * @response_404 {Object} Post not found by provided ID
+ * @response_401 {Object} Authentication required
+ * @response_500 {Object} Server error during data retrieval
+ *
+ * @example GET /api/posts/507f1f77bcf86cd799439011
+ * Response includes owner name, all comments with user names, like/dislike counts
+ */
 router.get('/:id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
@@ -324,7 +424,18 @@ router.get('/browse/active', auth, async (req, res) => {
 
     const now = new Date();
 
-    // Aggregation Pipeline: Efficiently finds top post at DB level
+    /**
+     * Aggregation Pipeline for "Most Active Post"
+     * @description Utilizes MongoDB aggregation to calculate activity scores server-side
+     * rather than fetching all posts to memory.
+     * 
+     * Pipeline stages:
+     * 1. $match: Filter for Topic + Live status
+     * 2. $addFields: Calculate score (likes.length + dislikes.length)
+     * 3. $sort: Order by calculated score descending
+     * 4. $limit: Fetch only the top result
+     * 5. $lookup: Join with Users collection for owner details
+     */
     const pipeline = [
       // 1. Filter: Must match topic, be Live, AND not expired
       { 
