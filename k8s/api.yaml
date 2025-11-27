@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mingle-api
+spec:
+  # SCALABILITY: 3 Replicas to match 3 GKE Nodes (High Availability)
+  replicas: 3 
+  selector:
+    matchLabels:
+      app: mingle-api
+  template:
+    metadata:
+      labels:
+        app: mingle-api
+    spec:
+      containers:
+        - name: mingle-api
+
+          image: hish5296/mingle-api:v1
+          
+          # Always pull the latest version of the tag
+          imagePullPolicy: Always 
+          
+          ports:
+            - containerPort: 3000
+          
+          # ---------------------------------------------------------
+          # ENVIRONMENT VARIABLES & SECRET INJECTION
+          # ---------------------------------------------------------
+          env:
+            # Standard Config
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            
+            # Database Connection (Internal K8s DNS)
+            # This expects the secret to contain the string: 
+            # "mongodb://mongo-service:27017/mingle"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mingle-secrets
+                  key: MONGO_URI
+            
+            # Security Secrets
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mingle-secrets
+                  key: JWT_SECRET
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mingle-secrets
+                  key: SESSION_SECRET
+            
+            # OAuth Credentials
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mingle-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mingle-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: GOOGLE_CALLBACK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mingle-secrets
+                  key: GOOGLE_CALLBACK_URL
+
+---
+# ---------------------------------------------------------
+# LOAD BALANCER SERVICE (Public IP)
+# ---------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: mingle-loadbalancer
+spec:
+  # This requests a Public IP from Google Cloud
+  type: LoadBalancer 
+  selector:
+    app: mingle-api
+  ports:
+    - protocol: TCP
+      port: 80        # External traffic hits Port 80 (Standard Web)
+      targetPort: 3000 # Forwards to Container Port 3000
