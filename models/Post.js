@@ -77,12 +77,6 @@ postSchema.index({ 'status': 1 });
 postSchema.index({ 'createdAt': -1 });
 
 /**
- * TTL index for auto-expiry (optional for Phase H: expiration handling)
- * Automatically removes documents when expiresAt is reached (set to 0 to disable auto-removal)
- */
-postSchema.index({ 'expiresAt': 1 }, { expireAfterSeconds: 0 });
-
-/**
  * Check if post has expired
  * @description Compares current time with post's expiration timestamp
  * @method isExpired

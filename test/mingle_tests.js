@@ -31,7 +31,7 @@
 const axios = require('axios');
 const fs = require('fs');
 
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://<VM_IP>:3000/api';
 
 /**
  * Main test execution function for TC1-TC3 authentication scenarios
