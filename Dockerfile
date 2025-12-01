@@ -1,4 +1,4 @@
-# Base image: Node.js 18 on Alpine Linux
+# Base image: Node.js 20 on Alpine Linux
 FROM node:20-alpine
 
 # Set working directory
