@@ -1,7 +1,6 @@
 # ☁️ Mingle - Cloud SaaS Application
 
 > **University Coursework:** Cloud Computing (BUCI028H6)  
-> **Grade Target:** Distinction 🏆
 
 Mingle is a RESTful Software-as-a-Service (SaaS) application designed to mimic social media functionality similar to Twitter. It allows users to post messages, browse topics, and interact via likes, dislikes, and comments.
 
@@ -69,10 +68,10 @@ This project uses a production-grade deployment strategy on GKE, utilizing **Ing
 Install the NGINX Ingress Controller and Cert-Manager on the cluster:
 ```bash
 # Install NGINX Ingress
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.14.0/deploy/static/provider/cloud/deploy.yaml
 
 # Install Cert-Manager
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml
 ```
 
 ### 2. Deployment
@@ -146,5 +145,6 @@ mingle/
 ---
 
 ## 📝 License
-This project was developed for academic purposes.
+This project was developed for academic purposes. See the technical report for more detailed information.
+
 ```
