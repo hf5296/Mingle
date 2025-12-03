@@ -1,4 +1,3 @@
-```markdown
 # ☁️ Mingle - Cloud SaaS Application
 
 > **University Coursework:** Cloud Computing (BUCI028H6)  
