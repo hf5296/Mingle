@@ -19,6 +19,23 @@ The project demonstrates advanced cloud-native development practices, traversing
 
 ---
 
+## 📂 Project Structure
+
+```text
+MINGLE/
+├── config/             # Passport.js & OAuth configuration
+├── k8s/                # Kubernetes Manifests (Deployment, Service, Ingress, Secrets)
+├── middleware/         # Auth & Validation Middleware
+├── models/             # Mongoose Schemas (User, Post)
+├── routes/             # API Route Definitions
+├── test/               # Automated Test Scripts
+├── app.js              # Application Entry Point
+├── Dockerfile          # Docker Image Build Instructions
+└── docker-compose.yml  # Local & VM Orchestration
+```
+
+---
+
 ## ✨ Key Features
 
 ### 🔐 Authentication & Security
@@ -129,23 +146,6 @@ npm test
 
 ### Postman Integration
 The test suite automatically exports valid JWT tokens to `test/postman_data.json`. These can be imported into Postman to manually test advanced features (Posting, Liking, Browsing) without manually copying tokens.
-
----
-
-## 📂 Project Structure
-
-```text
-MINGLE/
-├── config/             # Passport.js & OAuth configuration
-├── k8s/                # Kubernetes Manifests (Deployment, Service, Ingress, Secrets)
-├── middleware/         # Auth & Validation Middleware
-├── models/             # Mongoose Schemas (User, Post)
-├── routes/             # API Route Definitions
-├── test/               # Automated Test Scripts
-├── app.js              # Application Entry Point
-├── Dockerfile          # Docker Image Build Instructions
-└── docker-compose.yml  # Local & VM Orchestration
-```
 
 ---
 
