@@ -4,14 +4,14 @@
 
 Mingle is a RESTful Software-as-a-Service (SaaS) application designed to mimic social media functionality similar to Twitter. It allows users to post messages, browse topics, and interact via likes, dislikes, and comments.
 
-The project demonstrates advanced cloud-native development practices, including **Microservices architecture**, **Containerization (Docker)**, **Orchestration (Kubernetes/GKE)**, and **Secure Identity Management (OAuth 2.0)**.
+The project demonstrates advanced cloud-native development practices, traversing the full spectrum from **Local Development** to **Virtual Machine Deployment (Docker)** and finally **Orchestration (Kubernetes/GKE)**.
 
 ---
 
 ## 🛠 Tech Stack
 
 *   **Backend:** Node.js, Express.js
-*   **Database:** MongoDB, Mongoose (StatefulSet)
+*   **Database:** MongoDB, Mongoose
 *   **Authentication:** Passport.js (Google OAuth 2.0), JWT (JSON Web Tokens), BCrypt
 *   **Containerization:** Docker, Docker Compose
 *   **Orchestration:** Google Kubernetes Engine (GKE)
@@ -44,7 +44,7 @@ To run the application locally using Docker Compose:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/mingle.git
+    git clone https://github.com/hf5296/Mingle.git
     cd mingle
     ```
 
@@ -60,9 +60,28 @@ To run the application locally using Docker Compose:
 
 ---
 
-## ☁️ Cloud Deployment (Google Kubernetes Engine)
+## ☁️ Cloud Deployment (Docker VM)
 
-This project uses a production-grade deployment strategy on GKE, utilizing **Ingress** for Layer 7 routing and **Cert-Manager** for automatic SSL.
+For Phase E, the application was deployed to a standard Linux Virtual Machine (Google Compute Engine) using Docker Compose. This demonstrates the ability to deploy containerized applications without full orchestration overhead.
+
+1.  **Provision VM:** Create a standard Ubuntu VM on Google Cloud and open port `3000` in the Firewall.
+2.  **Environment Setup:** SSH into the VM and install Docker Engine & Compose.
+3.  **Deploy:**
+    ```bash
+    git clone https://github.com/hf5296/Mingle.git
+    cd mingle
+    # Create production .env file
+    nano .env 
+    # Launch in detached mode
+    docker-compose up -d
+    ```
+    *   API Access: `http://<VM-PUBLIC-IP>:3000`
+
+---
+
+## ☸️ Cloud Orchestration (Kubernetes / GKE)
+
+For the final phase, the project was migrated to a production-grade architecture on **Google Kubernetes Engine (GKE)**, utilizing **Ingress** for Layer 7 routing and **Cert-Manager** for automatic SSL.
 
 ### 1. Prerequisite Infrastructure
 Install the NGINX Ingress Controller and Cert-Manager on the cluster:
@@ -84,16 +103,17 @@ kubectl apply -f k8s/issuer.yaml
 # 2. Apply Secrets (Contains Base64 encoded Google Credentials & DB URI)
 kubectl apply -f k8s/secrets.yaml
 
-# 3. Deploy Database (StatefulSet)
+# 3. Deploy Database (StatefulSet for data persistence)
 kubectl apply -f k8s/mongo.yaml
 
 # 4. Deploy API & Ingress Rules
 kubectl apply -f k8s/api.yaml
 ```
 
-### 3. DNS Configuration
+### 3. DNS & Security Configuration
 The deployment uses `sslip.io` to map the Ingress External IP to a secure domain for Google OAuth compatibility.
 *   **URL:** `https://mingle.<EXTERNAL-IP>.sslip.io`
+*   **Status:** Secured with Let's Encrypt R3 Certificate.
 
 ---
 
@@ -115,36 +135,20 @@ The test suite automatically exports valid JWT tokens to `test/postman_data.json
 ## 📂 Project Structure
 
 ```text
-mingle/
-├── .env                  # Environment variables (DB URI, JWT Secrets, OAuth Keys)
-├── Dockerfile            # Container image configuration (Phase E)
-├── README.MD             # Coursework specification
-├── app.js                # Entry point: App initialization, Middleware, DB connection
-├── docker-compose.yml    # Local orchestration for App and MongoDB (Phase A/E)
-├── package.json          # Project dependencies and scripts
-├── config/
-│   └── passport.js       # Passport.js strategies for Google OAuth v2 & Account Linking
-├── k8s/                  # Kubernetes Manifests (Phase H)
-│   ├── api.yaml          # Deployment, Service, and Ingress (HTTPS) configuration
-│   ├── issuer.yaml       # Cert-Manager configuration for Let's Encrypt SSL
-│   ├── mongo.yaml        # StatefulSet & Headless Service for MongoDB
-│   └── secrets.yaml      # Base64 encoded secrets (Excluded from Git in real scenarios)
-├── middleware/
-│   └── auth.js           # JWT Bearer Token extraction and verification
-├── models/
-│   ├── Post.js           # Mongoose schema with TTL indexes and compound sorting
-│   └── User.js           # Mongoose schema supporting hybrid Auth/Local users
-├── routes/
-│   ├── auth.js           # Endpoints: Registration, Login, OAuth callbacks
-│   └── posts.js          # Endpoints: CRUD, Aggregation Pipelines, Pagination
-└── test/
-    ├── mingle_tests.js   # Automated testing script using Axios
-    └── postman_data.json # Exported test data for manual verification
+MINGLE/
+├── config/             # Passport.js & OAuth configuration
+├── k8s/                # Kubernetes Manifests (Deployment, Service, Ingress, Secrets)
+├── middleware/         # Auth & Validation Middleware
+├── models/             # Mongoose Schemas (User, Post)
+├── routes/             # API Route Definitions
+├── test/               # Automated Test Scripts
+├── app.js              # Application Entry Point
+├── Dockerfile          # Docker Image Build Instructions
+└── docker-compose.yml  # Local & VM Orchestration
 ```
 
 ---
 
 ## 📝 License
-This project was developed for academic purposes. See the technical report for more detailed information.
-
+This project was developed for academic purposes.
 ```
