@@ -79,10 +79,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - mingle.35.188.219.67.sslip.io # Change to current external IP of Load Balancer (nginx ingress controller)
+        - mingle.<EXTERNAL_IP>.sslip.io # Change to current external IP of Load Balancer (nginx ingress controller)
       secretName: mingle-tls-secret
   rules:
-    - host: mingle.35.188.219.67.sslip.io # Change to current external IP of Load Balancer (nginx ingress controller)
+    - host: mingle.<EXTERNAL_IP.sslip.io # Change to current external IP of Load Balancer (nginx ingress controller)
       http:
         paths:
           - path: /
