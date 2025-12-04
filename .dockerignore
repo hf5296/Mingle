@@ -1,0 +1,5 @@
+.env
+k8s/secrets.yaml
+node_modules/
+.git/
+README.MD

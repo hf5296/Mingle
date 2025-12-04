@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: mingle-api
-          image: hish5296/mingle-api:v1  # <--- Make sure this matches your DockerHub
+          image: hish5296/mingle-api:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -79,10 +79,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - mingle.35.188.219.67.sslip.io
+        - mingle.35.188.219.67.sslip.io # Change to current external IP of Load Balancer (nginx ingress controller)
       secretName: mingle-tls-secret
   rules:
-    - host: mingle.35.188.219.67.sslip.io
+    - host: mingle.35.188.219.67.sslip.io # Change to current external IP of Load Balancer (nginx ingress controller)
       http:
         paths:
           - path: /
